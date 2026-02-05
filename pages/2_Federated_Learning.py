@@ -121,3 +121,11 @@ if st.button("Run live simulation"):
             "p90": int(buffer_stats[0.9]),
         }
     )
+
+    csv_bytes = df.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        "Download live run (CSV)",
+        csv_bytes,
+        file_name="fl_live_run.csv",
+        mime="text/csv",
+    )

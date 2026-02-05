@@ -112,3 +112,11 @@ if st.button("Run sweep"):
             )
     df = pd.DataFrame(rows)
     st.dataframe(df, use_container_width=True)
+
+    csv_bytes = df.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        "Download sweep results (CSV)",
+        csv_bytes,
+        file_name="fl_sweep_results.csv",
+        mime="text/csv",
+    )
