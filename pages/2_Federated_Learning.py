@@ -1,16 +1,9 @@
 from __future__ import annotations
 
-from pathlib import Path
 import pandas as pd
 import streamlit as st
 
 from cislunar_qfl.app.sim_api import LiveRunConfig, simulate
-
-ROOT = Path(__file__).resolve().parents[1]
-OUTPUTS = ROOT / "outputs"
-BASELINE = OUTPUTS / "baseline"
-SWEEP = OUTPUTS / "sweep"
-PLOTS_COMPARE = ROOT / "plots_compare_arrangements"
 
 st.title("Federated Learning in Space")
 
@@ -61,10 +54,14 @@ with st.sidebar:
     contact_window_s = st.slider("Contact window (s)", 60, 3600, 600, 60)
     contact_gap_s = st.slider("Contact gap (s)", 60, 3600, 1200, 60)
     sim_hours = st.slider("Sim horizon (hours)", 0.1, 2.0, 0.5, 0.1)
+    seed = st.number_input("Seed", 0, 10000, 0)
 
 
 st.subheader("Live Simulation")
-st.caption("Lightweight backend (fast). Swap for the real simulator when available.")
+st.caption("Generated on demand using an assumed backend model (fast, deterministic).")
+with st.expander("Assumptions (editable via inputs)", expanded=False):
+    st.markdown(
+        \"\"\"\n- Accuracy improves only on successful (non-outage) rounds.\n- Learning rate scales with `clients_per_round` (diminishing returns).\n- Larger updates can improve learning but increase key demand.\n- Key supply is periodic: contact window + gap; buffer caps at capacity.\n\"\"\"\n    )
 
 if st.button("Run live simulation"):
     cfg = LiveRunConfig(
@@ -79,6 +76,7 @@ if st.button("Run live simulation"):
         contact_window_s=int(contact_window_s),
         contact_gap_s=int(contact_gap_s),
         sim_hours=float(sim_hours),
+        seed=int(seed),
     )
 
     @st.cache_data(show_spinner=False)
@@ -123,52 +121,3 @@ if st.button("Run live simulation"):
             "p90": int(buffer_stats[0.9]),
         }
     )
-
-
-st.subheader("Precomputed Results (if present)")
-
-baseline_imgs = [
-    "accuracy_vs_time.png",
-    "keybuffers_stats.png",
-    "outages_vs_time.png",
-    "rounds_vs_time.png",
-]
-
-found_any = False
-cols = st.columns(2)
-for i, name in enumerate(baseline_imgs):
-    path = BASELINE / name
-    if path.exists():
-        cols[i % 2].image(str(path), caption=f"Baseline: {name}", use_container_width=True)
-        found_any = True
-
-if not found_any:
-    st.info(
-        "No baseline images found. Place them in `outputs/baseline/` to show them here."
-    )
-
-st.markdown("**Sweep/Trade plots**")
-
-plot_choices = []
-for folder in [SWEEP, PLOTS_COMPARE]:
-    if folder.exists():
-        for p in sorted(folder.glob("*.png")):
-            plot_choices.append(p)
-
-if plot_choices:
-    selection = st.selectbox(
-        "Select a plot",
-        plot_choices,
-        format_func=lambda p: p.name,
-    )
-    st.image(str(selection), use_container_width=True)
-else:
-    st.info(
-        "No sweep plots found. Add PNGs to `outputs/sweep/` or `plots_compare_arrangements/`."
-    )
-
-csv_path = SWEEP / "sweep_results.csv"
-if csv_path.exists():
-    st.markdown("**Sweep results table**")
-    df = pd.read_csv(csv_path)
-    st.dataframe(df, use_container_width=True)
