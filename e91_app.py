@@ -375,8 +375,6 @@ def main():
             f"""
             <div style='text-align:center;'>
               <h1 style='margin-bottom:0; font-size:2.5rem;'>E91 QKD Enhanced Testbench</h1>
-              <div style='color:gray; font-size:0.9rem;'>Version {VERSION}</div>
-              <div style='color:gray; font-style:italic; font-size:0.85rem;'>Made by Tyler Barr</div>
             </div>
             <hr style='margin-top:10px;'/>
             """,
