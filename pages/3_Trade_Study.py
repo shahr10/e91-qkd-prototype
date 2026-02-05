@@ -92,6 +92,18 @@ if st.button("Run sweep"):
 
     results = _cached_sweep(sweep_cfg)
 
+    st.subheader("KPI Summary")
+    valid_ttt = results["time_to_target"]
+    valid_mask = np.isfinite(valid_ttt)
+    avg_ttt = float(np.nanmean(valid_ttt)) if np.any(valid_mask) else float("nan")
+    avg_outage = float(np.mean(results["outage_rate"]))
+    avg_final = float(np.mean(results["final_accuracy"]))
+
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Avg time to target (s)", "N/A" if np.isnan(avg_ttt) else f"{avg_ttt:.0f}")
+    c2.metric("Avg outage rate", f"{avg_outage:.2%}")
+    c3.metric("Avg final accuracy", f"{avg_final:.3f}")
+
     st.subheader("Heatmaps")
     st.pyplot(_heatmap("Time to target (s)", results["time_to_target"], clients, updates))
     st.pyplot(_heatmap("Outage rate", results["outage_rate"], clients, updates))

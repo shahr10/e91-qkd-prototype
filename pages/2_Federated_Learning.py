@@ -69,6 +69,8 @@ with st.expander("Assumptions (editable via inputs)", expanded=False):
 """
     )
 
+st.caption("Runtime estimate: ~1–2 seconds for default settings.")
+
 if st.button("Run live simulation"):
     cfg = LiveRunConfig(
         clients_per_round=int(clients_per_round),
@@ -91,13 +93,14 @@ if st.button("Run live simulation"):
 
     results = _cached_run(cfg)
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     col1.metric("Clients per round", f"{clients_per_round}")
     col2.metric("Key demand (bits/update)", f"{int(results['key_demand_bits']):,}")
     if results["time_to_target"] is None:
         col3.metric("Time to target", "Not reached")
     else:
         col3.metric("Time to target", f"{results['time_to_target'] / 60:.1f} min")
+    col4.metric("Outage rate", f"{float(results['outages'].mean()):.2%}")
 
     df = pd.DataFrame(
         {
