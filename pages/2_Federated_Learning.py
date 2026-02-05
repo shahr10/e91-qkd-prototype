@@ -61,7 +61,13 @@ st.subheader("Live Simulation")
 st.caption("Generated on demand using an assumed backend model (fast, deterministic).")
 with st.expander("Assumptions (editable via inputs)", expanded=False):
     st.markdown(
-        \"\"\"\n- Accuracy improves only on successful (non-outage) rounds.\n- Learning rate scales with `clients_per_round` (diminishing returns).\n- Larger updates can improve learning but increase key demand.\n- Key supply is periodic: contact window + gap; buffer caps at capacity.\n\"\"\"\n    )
+        """
+- Accuracy improves only on successful (non-outage) rounds.
+- Learning rate scales with `clients_per_round` (diminishing returns).
+- Larger updates can improve learning but increase key demand.
+- Key supply is periodic: contact window + gap; buffer caps at capacity.
+"""
+    )
 
 if st.button("Run live simulation"):
     cfg = LiveRunConfig(
