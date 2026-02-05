@@ -54,7 +54,7 @@ def _heatmap(fig_title: str, values: np.ndarray, clients: np.ndarray, updates: n
     ax.set_xlabel("Update size (bits)")
     ax.set_ylabel("Clients per round")
     ax.set_xticks(np.arange(len(updates)))
-    ax.set_xticklabels([f\"{int(u):,}\" for u in updates], rotation=45, ha="right")
+    ax.set_xticklabels([f"{int(u):,}" for u in updates], rotation=45, ha="right")
     ax.set_yticks(np.arange(len(clients)))
     ax.set_yticklabels([str(c) for c in clients])
     fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
