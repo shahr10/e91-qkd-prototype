@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-import numpy as np
 import pandas as pd
 import streamlit as st
+
+from cislunar_qfl.app.sim_api import LiveRunConfig, simulate
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUTS = ROOT / "outputs"
@@ -62,60 +63,29 @@ with st.sidebar:
     sim_hours = st.slider("Sim horizon (hours)", 0.1, 2.0, 0.5, 0.1)
 
 
-def _simulate_live_run() -> dict[str, object]:
-    total_seconds = int(sim_hours * 3600)
-    total_rounds = max(1, total_seconds // round_period_s)
-
-    rounds = np.arange(total_rounds)
-    time_s = rounds * round_period_s
-
-    # Simple accuracy curve (placeholder, replace with real backend)
-    growth_scale = max(1.0, total_rounds / 6.0)
-    accuracy = 1.0 - np.exp(-rounds / growth_scale)
-    accuracy = 0.5 + 0.5 * accuracy  # map to [0.5, 1.0)
-
-    # Key buffer dynamics (placeholder model)
-    key_demand_bits = update_size_bits if mode == "otp" else session_key_bits
-
-    buffer = np.zeros_like(time_s, dtype=float)
-    outages = np.zeros_like(time_s, dtype=int)
-
-    cycle = contact_window_s + contact_gap_s
-    for i in range(total_rounds):
-        t = time_s[i]
-        in_contact = (t % cycle) < contact_window_s
-        supply = qkd_throughput_bps * (round_period_s if in_contact else 0)
-
-        prev = buffer[i - 1] if i > 0 else key_buffer_capacity_bits / 2
-        available = min(key_buffer_capacity_bits, prev + supply)
-
-        if available >= key_demand_bits:
-            buffer[i] = available - key_demand_bits
-        else:
-            buffer[i] = available
-            outages[i] = 1
-
-    time_to_target = None
-    idx = np.where(accuracy >= target_accuracy)[0]
-    if idx.size > 0:
-        time_to_target = time_s[idx[0]]
-
-    return {
-        "time_s": time_s,
-        "rounds": rounds,
-        "accuracy": accuracy,
-        "buffer": buffer,
-        "outages": outages,
-        "time_to_target": time_to_target,
-        "key_demand_bits": key_demand_bits,
-    }
-
-
 st.subheader("Live Simulation")
-st.caption("Placeholder dynamics for the UI. Swap in the real backend when available.")
+st.caption("Lightweight backend (fast). Swap for the real simulator when available.")
 
 if st.button("Run live simulation"):
-    results = _simulate_live_run()
+    cfg = LiveRunConfig(
+        clients_per_round=int(clients_per_round),
+        round_period_s=int(round_period_s),
+        update_size_bits=float(update_size_bits),
+        target_accuracy=float(target_accuracy),
+        mode=str(mode),
+        session_key_bits=int(session_key_bits),
+        key_buffer_capacity_bits=float(key_buffer_capacity_bits),
+        qkd_throughput_bps=float(qkd_throughput_bps),
+        contact_window_s=int(contact_window_s),
+        contact_gap_s=int(contact_gap_s),
+        sim_hours=float(sim_hours),
+    )
+
+    @st.cache_data(show_spinner=False)
+    def _cached_run(cfg: LiveRunConfig):
+        return simulate(cfg)
+
+    results = _cached_run(cfg)
 
     col1, col2, col3 = st.columns(3)
     col1.metric("Clients per round", f"{clients_per_round}")
