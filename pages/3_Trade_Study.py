@@ -9,6 +9,17 @@ st.title("Trade Study / Sweeps")
 st.caption("Generate trade surfaces on demand (no precomputed files required).")
 
 with st.sidebar:
+    st.subheader("Flow")
+    st.markdown(
+        """
+1. Scenario
+2. QKD model
+3. Demand model
+4. Run
+5. Results
+"""
+    )
+
     st.subheader("Sweep ranges")
     clients_min = st.slider("Clients min", 1, 64, 4, 1)
     clients_max = st.slider("Clients max", 1, 64, 32, 1)

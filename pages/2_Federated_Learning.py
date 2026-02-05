@@ -18,6 +18,17 @@ This page answers three questions:
 )
 
 with st.sidebar:
+    st.subheader("Flow")
+    st.markdown(
+        """
+1. Scenario
+2. QKD model
+3. Demand model
+4. Run
+5. Results
+"""
+    )
+
     st.subheader("Live Run Inputs")
     clients_per_round = st.slider("Clients per round", 1, 64, 8, 1)
     round_period_s = st.slider("Round period (s)", 5, 600, 30, 5)

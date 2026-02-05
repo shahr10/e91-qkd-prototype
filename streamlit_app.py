@@ -37,6 +37,17 @@ Use the left sidebar to navigate:
 """
 )
 
+st.markdown(
+    """
+**Flow**
+1. Scenario
+2. QKD model
+3. Demand model
+4. Run
+5. Results
+"""
+)
+
 st.info(
     "Tip: In Streamlit Cloud, set the main file to `streamlit_app.py` to enable multipage navigation."
 )

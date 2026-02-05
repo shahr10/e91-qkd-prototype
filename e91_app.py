@@ -162,6 +162,18 @@ st.set_page_config(
 # Apply custom CSS
 st.markdown(PROFESSIONAL_CSS, unsafe_allow_html=True)
 
+# Sidebar flow guide
+st.sidebar.subheader("Flow")
+st.sidebar.markdown(
+    """
+1. Scenario
+2. QKD model
+3. Demand model
+4. Run
+5. Results
+"""
+)
+
 
 # ============================================================================
 # SESSION STATE INITIALIZATION
