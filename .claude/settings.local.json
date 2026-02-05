@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python test_math_verification.py:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(ls:*)",
+      "Bash(dir:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(del test_multi_pair_quick.py)"
+    ]
+  }
+}

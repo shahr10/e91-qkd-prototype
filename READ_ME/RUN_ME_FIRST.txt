@@ -1,0 +1,51 @@
+================================================================================
+                    E91 QKD PROTOTYPE - QUICK START
+================================================================================
+
+Welcome! Your E91 Quantum Key Distribution prototype is ready to run.
+
+STEP 1: Install Dependencies
+-----------------------------
+Open terminal in this directory and run:
+
+    pip install -r requirements.txt
+
+(This installs numpy, matplotlib, pandas, streamlit, qiskit)
+
+
+STEP 2: Run the Application
+-----------------------------
+    streamlit run e91_app.py
+
+The app will open in your browser automatically!
+
+
+STEP 3: Run Your First Experiment
+----------------------------------
+1. Select "Realistic Lab" from preset dropdown
+2. Click "Run Experiment"
+3. View your results (CHSH violation proves quantum entanglement!)
+
+
+That's it! Read QUICK_START.md for more details.
+
+================================================================================
+
+WHAT'S IN THIS DIRECTORY:
+- e91_app.py          - Main application (run this!)
+- 11 module files     - Core functionality (don't move these!)
+- 5 documentation files - Read for help
+
+TROUBLESHOOTING:
+- If qiskit not found: pip install qiskit qiskit-aer
+- If slow: reduce number of pairs to 1000
+- If errors: check all .py files are in same directory
+
+LEARN MORE:
+- QUICK_START.md     - Detailed beginner guide
+- README.md          - Complete documentation
+- SETUP_COMPLETE.md  - What was built for you
+
+ENJOY EXPLORING QUANTUM KEY DISTRIBUTION!
+
+================================================================================
