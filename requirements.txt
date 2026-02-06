@@ -22,3 +22,6 @@ scipy>=1.7.0
 # pytest-cov>=3.0.0
 # black>=22.0.0
 # flake8>=4.0.0
+
+# Constellation optimization
+deap>=1.4.1
