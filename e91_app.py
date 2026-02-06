@@ -200,6 +200,18 @@ if 'listener' not in st.session_state:
 if 'theme' not in st.session_state:
     st.session_state.theme = 'dark'
 
+# Mode toggle for progressive disclosure
+if 'ui_mode' not in st.session_state:
+    st.session_state.ui_mode = 'Basic'
+
+st.sidebar.subheader("Mode")
+st.session_state.ui_mode = st.sidebar.radio(
+    "Interface mode",
+    ["Basic", "Advanced"],
+    index=0 if st.session_state.ui_mode == "Basic" else 1,
+    horizontal=True,
+)
+
 # Initialize preset state
 if 'current_preset' not in st.session_state:
     st.session_state.current_preset = "Custom"
@@ -1377,7 +1389,7 @@ def main():
                     cn2 = st.session_state.get('cn2', SatelliteParameters.CN2_DEFAULT)
 
         with col_adv:
-            with st.expander("ADVANCED", expanded=True):
+            with st.expander("ADVANCED", expanded=(st.session_state.ui_mode == "Advanced")):
                 st.markdown("**Security Parameters**")
                 # Use config constants for security parameters
                 epsilon_sec = st.number_input("epsilon_sec",
