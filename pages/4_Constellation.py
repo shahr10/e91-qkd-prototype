@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from cislunar_constellation.config import ConstellationConfig
-from cislunar_constellation.engine.orbits import VALIDATED_ORBITS
+from cislunar_constellation.engine.orbits import VALIDATED_ORBITS, propagate_orbit
 from cislunar_constellation.run import run_design
 
 st.title("Cislunar Constellation Designer")
@@ -151,7 +151,15 @@ if st.button("Run Optimization", type="primary"):
 
     st.subheader("3D Constellation Geometry")
     if results.selected_orbits:
+        show_candidates = st.checkbox(
+            "Show candidate orbits (gray)",
+            value=False,
+            help="Draw the full candidate set as faint gray lines for context.",
+        )
+
         fig = go.Figure()
+
+        # Selected orbits (color)
         for name in results.selected_orbits:
             traj = results.orbit_trajectories.get(name)
             if traj is None:
@@ -167,6 +175,31 @@ if st.button("Run Optimization", type="primary"):
                     hovertemplate=f"{name}<br>x=%{{x:.1f}} km<br>y=%{{y:.1f}} km<br>z=%{{z:.1f}} km<extra></extra>",
                 )
             )
+
+        # Candidate orbits (faint gray)
+        if show_candidates:
+            # Keep it lightweight: use fewer points and skip selected to avoid overdraw
+            candidate_names = [n for n in results.orbit_names if n not in set(results.selected_orbits)]
+            for name in candidate_names:
+                traj = results.orbit_trajectories.get(name)
+                if traj is None:
+                    traj = propagate_orbit(name, n_points=200)
+                if traj is None:
+                    continue
+                x, y, z = traj[0] / 1e3, traj[1] / 1e3, traj[2] / 1e3
+                fig.add_trace(
+                    go.Scatter3d(
+                        x=x,
+                        y=y,
+                        z=z,
+                        mode="lines",
+                        name=f"cand:{name}",
+                        line=dict(color="rgba(120,120,120,0.25)", width=1),
+                        showlegend=False,
+                        hoverinfo="skip",
+                    )
+                )
+
         fig.update_layout(
             margin=dict(l=0, r=0, t=30, b=0),
             scene=dict(
@@ -177,6 +210,74 @@ if st.button("Run Optimization", type="primary"):
             ),
         )
         st.plotly_chart(fig, use_container_width=True)
+
+        st.subheader("Animated Orbit Motion")
+        if results.selected_orbits:
+            step = st.slider("Frame step", 1, 20, 4, help="Higher = faster animation, fewer frames")
+            names = [n for n in results.selected_orbits if n in results.orbit_trajectories]
+            if names:
+                T = results.orbit_trajectories[names[0]].shape[1]
+                fig_anim = go.Figure()
+
+                # Static orbit paths
+                for name in names:
+                    traj = results.orbit_trajectories[name]
+                    x, y, z = traj[0] / 1e3, traj[1] / 1e3, traj[2] / 1e3
+                    fig_anim.add_trace(
+                        go.Scatter3d(x=x, y=y, z=z, mode="lines", name=f"{name} path", opacity=0.4)
+                    )
+
+                # Initial markers
+                for name in names:
+                    traj = results.orbit_trajectories[name]
+                    fig_anim.add_trace(
+                        go.Scatter3d(
+                            x=[traj[0, 0] / 1e3],
+                            y=[traj[1, 0] / 1e3],
+                            z=[traj[2, 0] / 1e3],
+                            mode="markers",
+                            name=f"{name} sat",
+                        )
+                    )
+
+                frames = []
+                for t in range(0, T, step):
+                    data = []
+                    for name in names:
+                        traj = results.orbit_trajectories[name]
+                        data.append(
+                            go.Scatter3d(
+                                x=[traj[0, t] / 1e3],
+                                y=[traj[1, t] / 1e3],
+                                z=[traj[2, t] / 1e3],
+                                mode="markers",
+                            )
+                        )
+                    frames.append(go.Frame(data=data, name=str(t)))
+
+                fig_anim.frames = frames
+                fig_anim.update_layout(
+                    margin=dict(l=0, r=0, t=30, b=0),
+                    scene=dict(aspectmode="data"),
+                    updatemenus=[
+                        {
+                            "type": "buttons",
+                            "buttons": [
+                                {
+                                    "label": "Play",
+                                    "method": "animate",
+                                    "args": [None, {"frame": {"duration": 60, "redraw": True}, "fromcurrent": True}],
+                                },
+                                {
+                                    "label": "Pause",
+                                    "method": "animate",
+                                    "args": [[None], {"frame": {"duration": 0, "redraw": False}, "mode": "immediate"}],
+                                },
+                            ],
+                        }
+                    ],
+                )
+                st.plotly_chart(fig_anim, use_container_width=True)
 
     st.subheader("Access Heatmap (Sat × Ground Station)")
     if results.selected_orbits:
@@ -230,6 +331,18 @@ if st.button("Run Optimization", type="primary"):
                 file_name="coverage_heatmap.pdf",
                 mime="application/pdf",
             )
+
+            st.subheader("Coverage Fraction Over Time")
+            # Fraction of GS covered by at least one selected sat at each time
+            covered = coverage.astype(bool).sum(axis=1)  # time × gs -> time
+            frac = covered / max(1, coverage.shape[1])
+            fig_ts, ax_ts = plt.subplots(figsize=(8, 2.6))
+            ax_ts.plot(np.arange(len(frac)), frac, color="#1f77b4")
+            ax_ts.set_ylim(0, 1.0)
+            ax_ts.set_xlabel("Time index")
+            ax_ts.set_ylabel("GS coverage fraction")
+            ax_ts.set_title(f"Coverage fraction (avg={frac.mean():.2f})")
+            st.pyplot(fig_ts, use_container_width=True)
 
     export = {
         "config": cfg.__dict__,
