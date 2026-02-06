@@ -6,7 +6,7 @@ import numpy as np
 from deap import base, creator, tools, algorithms
 
 from cislunar_constellation.config import OptimizeConfig
-from constellation_notebook import VALIDATED_ORBITS
+from cislunar_constellation.engine.orbits import VALIDATED_ORBITS
 
 
 def setup_genetic_algorithm(vis_M, rate_M, orbit_names):

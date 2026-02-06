@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Dict, List, Tuple
 import numpy as np
 
-from cislunar_constellation.config import NetworkConfig
-from constellation_notebook import VALIDATED_ORBITS, GROUND_STATIONS
+from cislunar_constellation.config import NetworkConfig, GroundConfig
+from cislunar_constellation.engine.orbits import VALIDATED_ORBITS
 
 
 def assign_satellite_roles(
@@ -14,6 +14,7 @@ def assign_satellite_roles(
     rate_M: np.ndarray,
     orbit_names: List[str],
     cfg: NetworkConfig,
+    ground: GroundConfig,
 ) -> Tuple[Dict[str, str], Dict[str, List[str]], Dict[str, List[str]]]:
     satellite_roles: Dict[str, str] = {}
     satellite_isl_partners: Dict[str, List[str]] = {}
@@ -30,9 +31,9 @@ def assign_satellite_roles(
         if gs_vis_count > 10 and total_rate > 1e5:
             satellite_roles[sat_name] = "DLS"
             reachable = []
-            for k, gs in enumerate(GROUND_STATIONS):
+            for k, gs in enumerate(ground.stations):
                 if np.any(vis_M[j, :, k] > 0):
-                    reachable.append(gs["name"])
+                    reachable.append(gs.name)
             satellite_downlink_gs[sat_name] = reachable
         elif total_rate > 5e5:
             satellite_roles[sat_name] = "EPS"

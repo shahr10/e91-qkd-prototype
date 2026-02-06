@@ -4,14 +4,63 @@ from typing import Dict, List, Tuple
 import numpy as np
 
 from cislunar_constellation.config import GroundConfig, LinkConfig
+from cislunar_constellation.engine.constants import MU, L_STAR, T_STAR, R_EARTH
 
-# Temporary bridge: reuse notebook code for geometry helpers
-from constellation_notebook import (
-    GROUND_STATIONS,
-    get_gs_position_corrected,
-    compute_elevation,
-    check_occultation,
-)
+
+def get_gs_position_corrected(gs, t_hours: float) -> np.ndarray:
+    lat = np.radians(gs.lat)
+    lon = np.radians(gs.lon)
+    t_sec = t_hours * 3600.0
+
+    omega_earth = 2 * np.pi / 86164.0905
+    theta_earth = omega_earth * t_sec
+
+    r = R_EARTH + gs.alt
+
+    x_ef = r * np.cos(lat) * np.cos(lon)
+    y_ef = r * np.cos(lat) * np.sin(lon)
+    z_ef = r * np.sin(lat)
+
+    x_rot = x_ef * np.cos(theta_earth) - y_ef * np.sin(theta_earth)
+    y_rot = x_ef * np.sin(theta_earth) + y_ef * np.cos(theta_earth)
+
+    omega_syn = 2 * np.pi / T_STAR
+    theta_syn = omega_syn * t_sec
+
+    x_syn = x_rot * np.cos(theta_syn) - y_rot * np.sin(theta_syn)
+    y_syn = x_rot * np.sin(theta_syn) + y_rot * np.cos(theta_syn)
+
+    earth_center_x = -MU * L_STAR
+
+    return np.array([earth_center_x + x_syn, y_syn, z_ef])
+
+
+def compute_elevation(sat_pos: np.ndarray, gs_pos: np.ndarray) -> float:
+    earth_center = np.array([-MU * L_STAR, 0.0, 0.0])
+
+    los = sat_pos - gs_pos
+    up = (gs_pos - earth_center)
+    up /= np.linalg.norm(up)
+
+    cos_el = np.dot(los, up) / np.linalg.norm(los)
+    return float(np.degrees(np.arcsin(np.clip(cos_el, -1.0, 1.0))))
+
+
+def check_occultation(sat_pos: np.ndarray, gs_pos: np.ndarray) -> bool:
+    earth_center = np.array([-MU * L_STAR, 0.0, 0.0])
+
+    los = sat_pos - gs_pos
+    los_len = np.linalg.norm(los)
+    los_dir = los / los_len
+
+    a = gs_pos - earth_center
+    t = -np.dot(a, los_dir)
+
+    if 0 < t < los_len:
+        closest = gs_pos + t * los_dir
+        if np.linalg.norm(closest - earth_center) < 1.02 * R_EARTH:
+            return True
+    return False
 
 
 def compute_link_budget(distance_m: float, elevation_deg: float, link: LinkConfig) -> Tuple[float, float]:
@@ -63,11 +112,12 @@ def build_visibility_matrix(
     ground: GroundConfig,
     link: LinkConfig,
     n_time: int = 36,
+    horizon_hours: float = 24.0,
 ) -> Tuple[np.ndarray, np.ndarray, List[str]]:
     orbit_names = list(orbit_trajectories.keys())
     num_j = len(orbit_names)
 
-    gs_list = GROUND_STATIONS
+    gs_list = ground.stations
     num_gs = len(gs_list)
 
     vis_M = np.zeros((num_j, n_time, num_gs), dtype=int)
@@ -81,7 +131,7 @@ def build_visibility_matrix(
         n_pts = positions.shape[1]
 
         for t in range(n_time):
-            t_hours = t * 24.0 / n_time
+            t_hours = t * horizon_hours / n_time
             pos_idx = int(t * n_pts / n_time) % n_pts
             sat_pos = positions[:, pos_idx]
 

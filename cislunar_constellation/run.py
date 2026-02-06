@@ -39,6 +39,7 @@ def run_design(cfg: ConstellationConfig) -> DesignResults:
         cfg.ground,
         cfg.link,
         n_time=cfg.time.n_time,
+        horizon_hours=cfg.time.horizon_hours,
     )
 
     selected, metrics = genetic_algorithm_optimization(
@@ -55,6 +56,7 @@ def run_design(cfg: ConstellationConfig) -> DesignResults:
         rate_M,
         orbit_names,
         cfg.network,
+        cfg.ground,
     )
 
     return DesignResults(
