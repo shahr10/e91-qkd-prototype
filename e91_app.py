@@ -1676,7 +1676,7 @@ def main():
             k1.metric("QBER", f"{res.qber*100:.2f}%", help="Quantum Bit Error Rate of the sifted key.")
             k2.metric("CHSH S", f"{res.chsh_S:.3f}", help="Bell parameter; S>2 indicates nonlocality.")
             k3.metric("Key Rate (Asymp)", f"{res.key_rate_asymptotic:.3e}", help="Asymptotic secret key rate.")
-            k4.metric("Final Key Bits", f"{res.final_key_bits:,}", help="Final distilled key length.")
+            k4.metric("Final Key Bits", f"{res.num_key_bits:,}", help="Final distilled key length.")
             display_experiment_results(res, st.session_state.config)
 
     # ========================================================================
