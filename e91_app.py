@@ -1603,11 +1603,10 @@ def main():
 
         run_button = st.button("🚀 Run Experiment", type="primary", help=h("run_experiment"))
 
-        # Ensure required values exist in Basic mode
-        if st.session_state.ui_mode != "Advanced":
-            pA = st.session_state.get("pA", [0.5, 0.5, 0.0])
-            pB = st.session_state.get("pB", [0.5, 0.5, 0.0])
-            bell_state = st.session_state.get("bell_state", "phi_plus")
+        # Ensure required values exist for config build (all modes)
+        pA = st.session_state.get("pA", [0.5, 0.5, 0.0])
+        pB = st.session_state.get("pB", [0.5, 0.5, 0.0])
+        bell_state = st.session_state.get("bell_state", "phi_plus")
 
         # Build config from UI inputs first
         config = build_experiment_config(
