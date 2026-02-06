@@ -58,9 +58,17 @@ def _build_updates(min_v: float, max_v: float, steps: int) -> np.ndarray:
     return np.linspace(lo, hi, steps, dtype=float)
 
 
-def _heatmap(fig_title: str, values: np.ndarray, clients: np.ndarray, updates: np.ndarray):
+def _heatmap(
+    fig_title: str,
+    values: np.ndarray,
+    clients: np.ndarray,
+    updates: np.ndarray,
+    vmin: float | None = None,
+    vmax: float | None = None,
+    feasible_mask: np.ndarray | None = None,
+):
     fig, ax = plt.subplots(figsize=(7, 4.2))
-    im = ax.imshow(values, origin="lower", aspect="auto")
+    im = ax.imshow(values, origin="lower", aspect="auto", vmin=vmin, vmax=vmax)
     ax.set_title(fig_title)
     ax.set_xlabel("Update size (bits)")
     ax.set_ylabel("Clients per round")
@@ -69,6 +77,15 @@ def _heatmap(fig_title: str, values: np.ndarray, clients: np.ndarray, updates: n
     ax.set_yticks(np.arange(len(clients)))
     ax.set_yticklabels([str(c) for c in clients])
     fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+
+    if feasible_mask is not None:
+        # Outline the feasible (zero-outage) region.
+        ax.contour(
+            feasible_mask.astype(float),
+            levels=[0.5],
+            colors=["#1b9e77"],
+            linewidths=1.5,
+        )
     return fig
 
 
@@ -116,9 +133,53 @@ if st.button("Run sweep"):
     c3.metric("Avg final accuracy", f"{avg_final:.3f}")
 
     st.subheader("Heatmaps")
-    st.pyplot(_heatmap("Time to target (s)", results["time_to_target"], clients, updates))
-    st.pyplot(_heatmap("Outage rate", results["outage_rate"], clients, updates))
-    st.pyplot(_heatmap("Final accuracy", results["final_accuracy"], clients, updates))
+    feasible = results["outage_rate"] == 0.0
+    max_ttt = float(sim_hours * 3600)
+
+    st.pyplot(
+        _heatmap(
+            "Time to target (s) — lower is better",
+            results["time_to_target"],
+            clients,
+            updates,
+            vmin=0.0,
+            vmax=max_ttt,
+            feasible_mask=feasible,
+        )
+    )
+    st.caption(
+        "Higher client counts reduce rounds but increase instantaneous key demand, producing a non-monotonic optimum."
+    )
+
+    st.pyplot(
+        _heatmap(
+            "Outage rate — lower is better",
+            results["outage_rate"],
+            clients,
+            updates,
+            vmin=0.0,
+            vmax=1.0,
+            feasible_mask=feasible,
+        )
+    )
+    st.caption(
+        "The green contour marks zero-outage settings where key supply meets or exceeds demand."
+    )
+
+    st.pyplot(
+        _heatmap(
+            "Final accuracy — higher is better",
+            results["final_accuracy"],
+            clients,
+            updates,
+            vmin=0.0,
+            vmax=1.0,
+            feasible_mask=feasible,
+        )
+    )
+    st.caption(
+        "Accuracy increases with successful rounds; outages flatten learning even when updates are large."
+    )
 
     st.subheader("Sweep table")
     rows = []

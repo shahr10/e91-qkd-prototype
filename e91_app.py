@@ -438,7 +438,7 @@ def main():
     install_cmds = get_install_commands()
 
     # Show dependency status in an expander
-    with st.expander("🔧 Backend Dependencies Status", expanded=len(missing) > 0):
+    with st.expander("🔧 Backend Dependencies Status", expanded=True):
         col1, col2, col3 = st.columns(3)
 
         with col1:
