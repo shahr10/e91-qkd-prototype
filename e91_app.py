@@ -726,9 +726,11 @@ def main():
                 "Satellite LEO",
                 "Security Test (Eve Present)",
             ]
+            if "current_preset" not in st.session_state:
+                st.session_state.current_preset = "Custom"
             # Get current preset index
             try:
-                current_index = preset_options.index(st.session_state.current_preset)
+                current_index = preset_options.index(st.session_state.get("current_preset", "Custom"))
             except ValueError:
                 current_index = 0  # Default to "Custom"
 
