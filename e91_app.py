@@ -212,6 +212,22 @@ st.session_state.ui_mode = st.sidebar.radio(
     horizontal=True,
 )
 
+# Quick start presets (Basic mode only)
+if st.session_state.ui_mode == "Basic":
+    st.sidebar.subheader("Quick Start")
+    quick_preset = st.sidebar.selectbox(
+        "Example presets",
+        ["Realistic Lab", "Low Noise (alpha=0.06)", "Satellite Link", "High Loss Fiber"],
+        index=0,
+        help="Apply a preset configuration with one click.",
+    )
+    if st.sidebar.button("Apply Quick Preset"):
+        try:
+            apply_preset_to_session_state(quick_preset)
+            st.sidebar.success(f"Applied preset: {quick_preset}")
+        except Exception as exc:
+            st.sidebar.error(f"Failed to apply preset: {exc}")
+
 # Initialize preset state
 if 'current_preset' not in st.session_state:
     st.session_state.current_preset = "Custom"
