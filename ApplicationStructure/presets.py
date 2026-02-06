@@ -247,6 +247,22 @@ def get_preset_config(preset_name: str, base_config: ExperimentConfig) -> Experi
         base_config.enable_background = True
         base_config.background_cps = 100.0  # Low background (night + filtering)
 
+    elif preset_name == "Security Test (Eve Present)":
+        # Eavesdropper present to demonstrate security degradation
+        base_config.num_pairs = 20000
+        base_config.enable_depolarizing_noise = True
+        base_config.depolarizing_alpha = 0.08
+        base_config.enable_fiber_loss = True
+        base_config.distance_km_A = 5.0
+        base_config.distance_km_B = 5.0
+        base_config.fiber_loss_dB_per_km = 0.2
+        base_config.enable_detector_loss = True
+        base_config.heralding_efficiency = 0.9
+        base_config.end_detector_efficiency = 0.85
+        base_config.enable_eavesdropper = True
+        base_config.eve_model = "intercept_resend"
+        base_config.eve_intercept_prob = 0.25
+
     # Set preset name
     base_config.preset_name = preset_name
     return base_config
@@ -263,6 +279,7 @@ PRESET_NAMES = [
     "Long Distance (50km)",
     "Realistic Lab",
     "Satellite LEO",
+    "Security Test (Eve Present)",
     "Custom"
 ]
 

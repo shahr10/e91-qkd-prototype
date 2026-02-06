@@ -17,6 +17,12 @@ This page answers three questions:
 """
 )
 
+st.info(
+    "Why QKD for Federated Learning? Federated learning in space requires secure model "
+    "updates between satellites and ground stations. QKD provides provably secure encryption "
+    "keys for these updates, protecting model integrity against adversarial attacks."
+)
+
 with st.sidebar:
     st.subheader("Flow")
     st.markdown(

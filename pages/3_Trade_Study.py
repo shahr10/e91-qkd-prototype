@@ -7,6 +7,18 @@ from cislunar_qfl.app.sim_api import LiveRunConfig, SweepConfig, run_sweep
 
 st.title("Trade Study / Sweeps")
 st.caption("Generate trade surfaces on demand (no precomputed files required).")
+st.markdown(
+    """
+## 🔬 Parameter Sweep Analysis
+Explore how system performance changes across different configurations.
+Lighter colors indicate faster convergence when applicable.
+
+**How to use:**
+1. Set sweep ranges (clients, update sizes)
+2. Click "Run sweep"
+3. Identify optimal configurations in the heatmap
+"""
+)
 
 with st.sidebar:
     st.subheader("Flow")
@@ -151,7 +163,7 @@ if st.button("Run sweep"):
 
     st.pyplot(
         _heatmap(
-            "Time to target (s) — lower is better",
+            "Convergence time vs clients & update size (s) — lower is better",
             results["time_to_target"],
             clients,
             updates,
@@ -166,7 +178,7 @@ if st.button("Run sweep"):
 
     st.pyplot(
         _heatmap(
-            "Outage rate — lower is better",
+            "Key outage rate — lower is better",
             results["outage_rate"],
             clients,
             updates,

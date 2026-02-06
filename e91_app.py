@@ -174,6 +174,18 @@ st.sidebar.markdown(
 """
 )
 
+# Intro / Quick Start
+st.markdown(
+    """
+## 🔐 What is E91 QKD?
+E91 (Ekert 1991) is a quantum key distribution protocol that uses entangled photon pairs
+to generate shared secret keys between Alice and Bob. This testbench simulates realistic
+quantum and classical effects.
+
+**Quick Start:** Select a preset → Adjust distance → Run Experiment
+"""
+)
+
 
 # ============================================================================
 # SESSION STATE INITIALIZATION
@@ -712,6 +724,7 @@ def main():
                 "Long Distance (50km)",
                 "Realistic Lab",
                 "Satellite LEO",
+                "Security Test (Eve Present)",
             ]
             # Get current preset index
             try:
@@ -1566,7 +1579,12 @@ def main():
                         st.markdown(f"- {item}")
 
         st.markdown("---")
-        run_button = st.button("Run Experiment", type="primary", help=h("run_experiment"))
+        if distance_A + distance_B > 300 and enable_fiber:
+            st.warning("Fiber distance >300 km is likely unrealistic; consider satellite mode.")
+        if num_pairs <= 0:
+            st.error("Photon pairs must be > 0.")
+
+        run_button = st.button("🚀 Run Experiment", type="primary", help=h("run_experiment"))
 
         # Build config from UI inputs first
         config = build_experiment_config(
@@ -1626,7 +1644,15 @@ def main():
                 st.error(f"Experiment failed: {e}")
 
         if 'results' in st.session_state and st.session_state.results is not None:
-            display_experiment_results(st.session_state.results, st.session_state.config)
+            st.markdown("---")
+            st.subheader("Results")
+            res = st.session_state.results
+            k1, k2, k3, k4 = st.columns(4)
+            k1.metric("QBER", f"{res.qber*100:.2f}%")
+            k2.metric("CHSH S", f"{res.chsh_S:.3f}")
+            k3.metric("Key Rate (Asymp)", f"{res.key_rate_asymptotic:.3e}")
+            k4.metric("Final Key Bits", f"{res.final_key_bits:,}")
+            display_experiment_results(res, st.session_state.config)
 
     # ========================================================================
     # TAB 3: MESSAGE TEST (Practical QKD Application)
