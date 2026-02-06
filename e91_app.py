@@ -899,6 +899,7 @@ def main():
                     help="Select initial entangled state (Qiskit backend). Phi+: Standard symmetric state for E91. Phi-: Phase-flipped variant. Psi+: Antisymmetric encoding. Psi-: Singlet state.",
                 )
                 bell_state = bell_labels[bell_choice]
+                st.session_state["bell_state"] = bell_state
                 st.caption(f"💡 {bell_descriptions[bell_state]}")
 
                 # Use config constants for num_pairs range
@@ -1601,6 +1602,12 @@ def main():
             st.error("Photon pairs must be > 0.")
 
         run_button = st.button("🚀 Run Experiment", type="primary", help=h("run_experiment"))
+
+        # Ensure required values exist in Basic mode
+        if st.session_state.ui_mode != "Advanced":
+            pA = st.session_state.get("pA", [0.5, 0.5, 0.0])
+            pB = st.session_state.get("pB", [0.5, 0.5, 0.0])
+            bell_state = st.session_state.get("bell_state", "phi_plus")
 
         # Build config from UI inputs first
         config = build_experiment_config(
