@@ -85,3 +85,23 @@ class ConstellationConfig:
     optimize: OptimizeConfig = field(default_factory=OptimizeConfig)
     network: NetworkConfig = field(default_factory=NetworkConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
+
+    def validate(self) -> list[str]:
+        warnings: list[str] = []
+
+        if self.orbits.max_candidates <= 0:
+            warnings.append("max_candidates should be > 0.")
+        if self.optimize.target_sats <= 0:
+            warnings.append("target_sats should be > 0.")
+        if self.orbits.max_candidates < self.optimize.target_sats:
+            warnings.append(
+                "max_candidates is smaller than target_sats; optimization may be impossible."
+            )
+        if self.time.n_time < 6:
+            warnings.append("n_time is very low; visibility estimates may be unstable.")
+        if self.ground.elevation_mask_deg >= 60:
+            warnings.append("High elevation mask may eliminate most links.")
+        if self.ground.availability <= 0 or self.ground.availability > 1:
+            warnings.append("availability should be in (0, 1].")
+
+        return warnings
