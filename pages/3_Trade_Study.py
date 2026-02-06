@@ -90,7 +90,7 @@ def _heatmap(
     ax.set_yticklabels([str(c) for c in clients])
     fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
 
-    if feasible_mask is not None:
+    if feasible_mask is not None and feasible_mask.shape[0] >= 2 and feasible_mask.shape[1] >= 2:
         # Outline the feasible (zero-outage) region.
         ax.contour(
             feasible_mask.astype(float),
