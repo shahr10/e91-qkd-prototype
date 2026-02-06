@@ -820,20 +820,23 @@ def main():
                             st.rerun()
                     st.caption(f"📍 Alice: {distance_A:.1f} km | Bob: {distance_B:.1f} km | Total: {distance_A + distance_B:.1f} km")
 
-                st.markdown("**Angles (radians):**")
-                angle_type = st.radio("Type", ["Exact", "Whole Radians (π/n)"], horizontal=True, help=h("angle_type"))
-                if st.button("Randomize Angles", width='stretch', help=h("randomize_angles")):
-                    if angle_type == "Whole Radians (π/n)":
-                        # π/8 increments: 0, π/8, 2π/8, ..., 8π/8 = π (9 values total)
-                        for key in ["alice_0", "alice_1", "alice_2", "bob_0", "bob_1", "bob_2"]:
-                            st.session_state[key] = float(np.random.choice(range(9)) * np.pi / 8)
-                    else:
-                        # Random angles in [0, π] using validation range
-                        for key in ["alice_0", "alice_1", "alice_2", "bob_0", "bob_1", "bob_2"]:
-                            st.session_state[key] = float(np.random.uniform(ValidationRanges.ANGLE_MIN, np.pi))
-                    st.rerun()
+                if st.session_state.ui_mode == "Advanced":
+                    head_a, head_b = st.columns([6, 1])
+                    with head_a:
+                        st.markdown("**Angles (radians):**")
+                    with head_b:
+                        if st.button("🎲", help=h("randomize_angles"), key="randomize_angles_btn"):
+                            if st.session_state.get("angle_type", "Exact") == "Whole Radians (π/n)":
+                                for key in ["alice_0", "alice_1", "alice_2", "bob_0", "bob_1", "bob_2"]:
+                                    st.session_state[key] = float(np.random.choice(range(9)) * np.pi / 8)
+                            else:
+                                for key in ["alice_0", "alice_1", "alice_2", "bob_0", "bob_1", "bob_2"]:
+                                    st.session_state[key] = float(np.random.uniform(ValidationRanges.ANGLE_MIN, np.pi))
+                            st.rerun()
+
+                    angle_type = st.radio("Type", ["Exact", "Whole Radians (π/n)"], horizontal=True, help=h("angle_type"), key="angle_type")
                 # Angle editors
-                if angle_type == "Whole Radians (π/n)":
+                if st.session_state.ui_mode == "Advanced" and angle_type == "Whole Radians (π/n)":
                     # Use selectboxes with symbolic π labels at π/8 increments (0 to π)
                     opts = [(f"{k}π/8" if k > 0 else "0", k*np.pi/8.0) for k in range(0, 9)]
                     label_map = {v: l for l, v in opts}
@@ -851,7 +854,7 @@ def main():
                         bob_1 = st.selectbox("θ_B1", opts, index=int(round(st.session_state.get('bob_1', np.pi/4)/(np.pi/8))), format_func=lambda x: x[0], help=h("angle"))[1]
                     with b3:
                         bob_2 = st.selectbox("θ_B2", opts, index=int(round(st.session_state.get('bob_2', 3*np.pi/8)/(np.pi/8))), format_func=lambda x: x[0], help=h("angle"))[1]
-                else:
+                elif st.session_state.ui_mode == "Advanced":
                     # Exact angle input with validation ranges (0 to π for E91)
                     a1, a2, a3 = st.columns(3)
                     with a1:
@@ -868,7 +871,8 @@ def main():
                     with b3:
                         bob_2 = st.number_input("theta_B2", ValidationRanges.ANGLE_MIN, float(np.pi), st.session_state.get("bob_2", BOB_ANGLES_DEFAULT[2]), 0.05, format="%.4f", help=h("angle"))
 
-                st.session_state.update({'alice_0': alice_0, 'alice_1': alice_1, 'alice_2': alice_2, 'bob_0': bob_0, 'bob_1': bob_1, 'bob_2': bob_2})
+                if st.session_state.ui_mode == "Advanced":
+                    st.session_state.update({'alice_0': alice_0, 'alice_1': alice_1, 'alice_2': alice_2, 'bob_0': bob_0, 'bob_1': bob_1, 'bob_2': bob_2})
 
                 # Enhanced Bell state selection with visualization
                 st.markdown("---")
@@ -905,37 +909,38 @@ def main():
                 st.session_state['num_pairs'] = int(num_pairs)
                 est_time = estimate_runtime(num_pairs, backend)
 
-                st.markdown("---")
-                st.markdown("### Basis Probabilities")
-                # Default basis probabilities for E91 (uniform over first two bases)
-                DEFAULT_BASIS_PROBS = [0.5, 0.5, 0.0]
-                c1, c2 = st.columns(2)
-                with c1:
-                    if st.button("Randomize A & B", width='stretch', help=h("prob_randomize")):
-                        st.session_state['pA'] = normalize_probs(np.random.rand(3).tolist())
-                        st.session_state['pB'] = normalize_probs(np.random.rand(3).tolist())
-                with c2:
-                    if st.button("Reset Defaults", width='stretch', help=h("prob_reset")):
-                        st.session_state['pA'] = DEFAULT_BASIS_PROBS
-                        st.session_state['pB'] = DEFAULT_BASIS_PROBS
-                pA = st.session_state.get('pA', DEFAULT_BASIS_PROBS)
-                pB = st.session_state.get('pB', DEFAULT_BASIS_PROBS)
-                la, lb = st.columns(2)
-                with la:
-                    # Use validation ranges for probabilities
-                    pA0 = st.slider("p(A0)", ValidationRanges.PROBABILITY_MIN, ValidationRanges.PROBABILITY_MAX, float(pA[0]), 0.01, help=h("pA"))
-                    pA1 = st.slider("p(A1)", ValidationRanges.PROBABILITY_MIN, ValidationRanges.PROBABILITY_MAX, float(pA[1]), 0.01, help=h("pA"))
-                    pA2 = st.slider("p(A2)", ValidationRanges.PROBABILITY_MIN, ValidationRanges.PROBABILITY_MAX, float(pA[2]), 0.01, help=h("pA"))
-                with lb:
-                    pB0 = st.slider("p(B0)", ValidationRanges.PROBABILITY_MIN, ValidationRanges.PROBABILITY_MAX, float(pB[0]), 0.01, help=h("pB"))
-                    pB1 = st.slider("p(B1)", ValidationRanges.PROBABILITY_MIN, ValidationRanges.PROBABILITY_MAX, float(pB[1]), 0.01, help=h("pB"))
-                    pB2 = st.slider("p(B2)", ValidationRanges.PROBABILITY_MIN, ValidationRanges.PROBABILITY_MAX, float(pB[2]), 0.01, help=h("pB"))
-                pA = normalize_probs([pA0, pA1, pA2])
-                pB = normalize_probs([pB0, pB1, pB2])
-                st.caption(f"Alice p = {np.round(pA, 3).tolist()} | Bob p = {np.round(pB, 3).tolist()}")
+                if st.session_state.ui_mode == "Advanced":
+                    st.markdown("---")
+                    st.markdown("### Basis Probabilities")
+                    # Default basis probabilities for E91 (uniform over first two bases)
+                    DEFAULT_BASIS_PROBS = [0.5, 0.5, 0.0]
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        if st.button("Randomize A & B", width='stretch', help=h("prob_randomize")):
+                            st.session_state['pA'] = normalize_probs(np.random.rand(3).tolist())
+                            st.session_state['pB'] = normalize_probs(np.random.rand(3).tolist())
+                    with c2:
+                        if st.button("Reset Defaults", width='stretch', help=h("prob_reset")):
+                            st.session_state['pA'] = DEFAULT_BASIS_PROBS
+                            st.session_state['pB'] = DEFAULT_BASIS_PROBS
+                    pA = st.session_state.get('pA', DEFAULT_BASIS_PROBS)
+                    pB = st.session_state.get('pB', DEFAULT_BASIS_PROBS)
+                    la, lb = st.columns(2)
+                    with la:
+                        # Use validation ranges for probabilities
+                        pA0 = st.slider("p(A0)", ValidationRanges.PROBABILITY_MIN, ValidationRanges.PROBABILITY_MAX, float(pA[0]), 0.01, help=h("pA"))
+                        pA1 = st.slider("p(A1)", ValidationRanges.PROBABILITY_MIN, ValidationRanges.PROBABILITY_MAX, float(pA[1]), 0.01, help=h("pA"))
+                        pA2 = st.slider("p(A2)", ValidationRanges.PROBABILITY_MIN, ValidationRanges.PROBABILITY_MAX, float(pA[2]), 0.01, help=h("pA"))
+                    with lb:
+                        pB0 = st.slider("p(B0)", ValidationRanges.PROBABILITY_MIN, ValidationRanges.PROBABILITY_MAX, float(pB[0]), 0.01, help=h("pB"))
+                        pB1 = st.slider("p(B1)", ValidationRanges.PROBABILITY_MIN, ValidationRanges.PROBABILITY_MAX, float(pB[1]), 0.01, help=h("pB"))
+                        pB2 = st.slider("p(B2)", ValidationRanges.PROBABILITY_MIN, ValidationRanges.PROBABILITY_MAX, float(pB[2]), 0.01, help=h("pB"))
+                    pA = normalize_probs([pA0, pA1, pA2])
+                    pB = normalize_probs([pB0, pB1, pB2])
+                    st.caption(f"Alice p = {np.round(pA, 3).tolist()} | Bob p = {np.round(pB, 3).tolist()}")
 
         with col_losses:
-            with st.expander("LOSSES", expanded=True):
+            with st.expander("LOSSES", expanded=(st.session_state.ui_mode == "Advanced")):
                 st.markdown("**Logical Noise**")
                 enable_depol = st.checkbox("Depolarizing Noise", value=st.session_state.enable_depol, help=h("enable_depol"), on_change=switch_to_custom)
                 st.session_state.enable_depol = enable_depol
@@ -1625,14 +1630,16 @@ def main():
         for w in validate_config(config):
             st.warning(w)
         if run_button:
+            st.info(f"Estimated runtime: {est_time:.1f}s")
             pbar = st.progress(0)
             status = st.empty()
             def pcb(p, m):
                 pbar.progress(p)
                 status.text(m)
             try:
-                proto = E91Protocol(config)
-                results = proto.run(progress_callback=pcb)
+                with st.spinner("Running experiment..."):
+                    proto = E91Protocol(config)
+                    results = proto.run(progress_callback=pcb)
                 pbar.empty()
                 status.empty()
                 st.success(f"Experiment completed in {results.execution_time:.2f}s")
@@ -1648,10 +1655,10 @@ def main():
             st.subheader("Results")
             res = st.session_state.results
             k1, k2, k3, k4 = st.columns(4)
-            k1.metric("QBER", f"{res.qber*100:.2f}%")
-            k2.metric("CHSH S", f"{res.chsh_S:.3f}")
-            k3.metric("Key Rate (Asymp)", f"{res.key_rate_asymptotic:.3e}")
-            k4.metric("Final Key Bits", f"{res.final_key_bits:,}")
+            k1.metric("QBER", f"{res.qber*100:.2f}%", help="Quantum Bit Error Rate of the sifted key.")
+            k2.metric("CHSH S", f"{res.chsh_S:.3f}", help="Bell parameter; S>2 indicates nonlocality.")
+            k3.metric("Key Rate (Asymp)", f"{res.key_rate_asymptotic:.3e}", help="Asymptotic secret key rate.")
+            k4.metric("Final Key Bits", f"{res.final_key_bits:,}", help="Final distilled key length.")
             display_experiment_results(res, st.session_state.config)
 
     # ========================================================================
