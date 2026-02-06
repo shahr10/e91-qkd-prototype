@@ -153,7 +153,7 @@ except ImportError:
 # ============================================================================
 
 st.set_page_config(
-    page_title="E91 QKD Professional",
+    page_title="QKD Prototype",
     page_icon="🔐",
     layout="wide",
     initial_sidebar_state="expanded"
