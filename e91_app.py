@@ -1670,7 +1670,7 @@ def main():
 
         if 'results' in st.session_state and st.session_state.results is not None:
             st.markdown("---")
-            st.subheader("Results")
+            st.subheader("Key Metrics")
             res = st.session_state.results
             k1, k2, k3, k4 = st.columns(4)
             k1.metric("QBER", f"{res.qber*100:.2f}%", help="Quantum Bit Error Rate of the sifted key.")
