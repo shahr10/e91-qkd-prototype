@@ -4,6 +4,7 @@ import json
 import io
 import matplotlib.pyplot as plt
 import numpy as np
+import plotly.graph_objects as go
 import streamlit as st
 
 from cislunar_constellation.config import ConstellationConfig
@@ -148,6 +149,51 @@ if st.button("Run Optimization", type="primary"):
     st.subheader("Roles")
     st.write(results.roles)
 
+    st.subheader("3D Constellation Geometry")
+    if results.selected_orbits:
+        fig = go.Figure()
+        for name in results.selected_orbits:
+            traj = results.orbit_trajectories.get(name)
+            if traj is None:
+                continue
+            x, y, z = traj[0] / 1e3, traj[1] / 1e3, traj[2] / 1e3
+            fig.add_trace(
+                go.Scatter3d(
+                    x=x,
+                    y=y,
+                    z=z,
+                    mode="lines",
+                    name=name,
+                    hovertemplate=f"{name}<br>x=%{{x:.1f}} km<br>y=%{{y:.1f}} km<br>z=%{{z:.1f}} km<extra></extra>",
+                )
+            )
+        fig.update_layout(
+            margin=dict(l=0, r=0, t=30, b=0),
+            scene=dict(
+                xaxis_title="x (km)",
+                yaxis_title="y (km)",
+                zaxis_title="z (km)",
+                aspectmode="data",
+            ),
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    st.subheader("Access Heatmap (Sat × Ground Station)")
+    if results.selected_orbits:
+        sel_idx = [results.orbit_names.index(s) for s in results.selected_orbits if s in results.orbit_names]
+        if sel_idx:
+            access = results.vis_M[sel_idx, :, :].sum(axis=1)  # [sat, gs]
+            fig2, ax2 = plt.subplots(figsize=(7.5, 3.8))
+            im2 = ax2.imshow(access, aspect="auto", origin="lower", cmap="magma")
+            ax2.set_xlabel("Ground station")
+            ax2.set_ylabel("Satellite (selected)")
+            ax2.set_xticks(range(len(cfg.ground.stations)))
+            ax2.set_xticklabels([gs.name for gs in cfg.ground.stations], rotation=45, ha="right")
+            ax2.set_yticks(range(len(sel_idx)))
+            ax2.set_yticklabels([results.orbit_names[i] for i in sel_idx], fontsize=7)
+            fig2.colorbar(im2, ax=ax2, fraction=0.046, pad=0.04, label="Time steps with access")
+            st.pyplot(fig2, use_container_width=True)
+
     st.subheader("Coverage Heatmap (Time × Ground Station)")
     # Build time × GS coverage for selected orbits
     if results.selected_orbits:
@@ -162,7 +208,7 @@ if st.button("Run Optimization", type="primary"):
             ax.set_yticks(range(len(cfg.ground.stations)))
             ax.set_yticklabels([gs.name for gs in cfg.ground.stations])
             fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04, label="Visibility (0/1)")
-            st.pyplot(fig, width="stretch")
+            st.pyplot(fig, use_container_width=True)
 
             buf_png = io.BytesIO()
             fig.savefig(buf_png, format="png", dpi=200, bbox_inches="tight")
