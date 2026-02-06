@@ -12,6 +12,13 @@ st.caption("Engine-backed optimization for cislunar quantum relay constellations
 
 # Sidebar controls
 with st.sidebar:
+    st.subheader("Presets")
+    preset = st.selectbox(
+        "Scenario presets",
+        ["Default", "High Coverage", "Low Satellites", "High Key Rate"],
+        index=0,
+    )
+
     st.subheader("Mode")
     mode = st.radio("Interface mode", ["Basic", "Advanced"], horizontal=True)
 
@@ -21,15 +28,36 @@ with st.sidebar:
 
     st.subheader("Orbits")
     families = sorted({v["family"] for v in VALIDATED_ORBITS.values()})
+    if preset == "High Coverage":
+        default_families = ["Halo", "DRO", "Lyapunov", "Vertical"]
+        max_candidates = 40
+    elif preset == "Low Satellites":
+        default_families = ["Halo", "Lyapunov"]
+        max_candidates = 15
+    elif preset == "High Key Rate":
+        default_families = ["DRO", "Halo"]
+        max_candidates = 30
+    else:
+        default_families = ["Halo", "DRO", "Lyapunov"]
+        max_candidates = 20
+
     selected_families = st.multiselect(
         "Orbit families",
         families,
-        default=["Halo", "DRO", "Lyapunov"],
+        default=[f for f in default_families if f in families],
     )
-    max_candidates = st.slider("Max candidates", 5, 80, 20, 5)
+    max_candidates = st.slider("Max candidates", 5, 80, max_candidates, 5)
 
     st.subheader("Optimization")
-    target_sats = st.slider("Target satellites", 4, 40, 12, 1)
+    if preset == "Low Satellites":
+        target_default = 8
+    elif preset == "High Coverage":
+        target_default = 16
+    elif preset == "High Key Rate":
+        target_default = 14
+    else:
+        target_default = 12
+    target_sats = st.slider("Target satellites", 4, 40, target_default, 1)
 
     if mode == "Advanced":
         st.subheader("GA Settings")
@@ -79,8 +107,21 @@ for warn in cfg.validate():
 st.markdown("---")
 
 if st.button("Run Optimization", type="primary"):
+    progress = st.progress(0, text="Propagating orbits...")
+
+    def _progress_cb(stage: str, value: float):
+        label_map = {
+            "propagate": "Propagating orbits...",
+            "visibility": "Computing visibility...",
+            "ga": "Running genetic algorithm...",
+            "roles": "Assigning roles...",
+            "done": "Finalizing...",
+        }
+        progress.progress(int(value * 100), text=label_map.get(stage, stage))
+
     with st.spinner("Running design optimization..."):
-        results = run_design(cfg)
+        results = run_design(cfg, progress_cb=_progress_cb)
+    progress.empty()
 
     st.success("Optimization complete.")
 
@@ -92,6 +133,14 @@ if st.button("Run Optimization", type="primary"):
 
     st.subheader("Selected Orbits")
     st.write(results.selected_orbits)
+
+    st.subheader("Orbit Families (Selected)")
+    family_counts = {}
+    for name in results.selected_orbits:
+        fam = VALIDATED_ORBITS[name]["family"]
+        family_counts[fam] = family_counts.get(fam, 0) + 1
+    if family_counts:
+        st.bar_chart(family_counts)
 
     st.subheader("Roles")
     st.write(results.roles)

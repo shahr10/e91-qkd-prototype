@@ -25,14 +25,20 @@ def _select_orbits(cfg: ConstellationConfig) -> Dict[str, dict]:
     return {k: candidates[k] for k in orbit_names}
 
 
-def run_design(cfg: ConstellationConfig) -> DesignResults:
+def run_design(cfg: ConstellationConfig, progress_cb=None) -> DesignResults:
     selected_catalog = _select_orbits(cfg)
+
+    if progress_cb:
+        progress_cb("propagate", 0.15)
 
     orbit_trajectories: Dict[str, np.ndarray] = {}
     for name in selected_catalog.keys():
         pos = propagate_orbit(name)
         if pos is not None:
             orbit_trajectories[name] = pos
+
+    if progress_cb:
+        progress_cb("visibility", 0.45)
 
     vis_M, rate_M, orbit_names = build_visibility_matrix(
         orbit_trajectories,
@@ -42,12 +48,18 @@ def run_design(cfg: ConstellationConfig) -> DesignResults:
         horizon_hours=cfg.time.horizon_hours,
     )
 
+    if progress_cb:
+        progress_cb("ga", 0.75)
+
     selected, metrics = genetic_algorithm_optimization(
         vis_M,
         rate_M,
         orbit_names,
         cfg.optimize,
     )
+
+    if progress_cb:
+        progress_cb("roles", 0.9)
 
     roles, isl_partners, downlink_map = assign_satellite_roles(
         selected,
@@ -58,6 +70,9 @@ def run_design(cfg: ConstellationConfig) -> DesignResults:
         cfg.network,
         cfg.ground,
     )
+
+    if progress_cb:
+        progress_cb("done", 1.0)
 
     return DesignResults(
         selected_orbits=selected,
