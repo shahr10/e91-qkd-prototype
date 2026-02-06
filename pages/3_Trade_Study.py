@@ -90,6 +90,11 @@ def _heatmap(
 
 
 if st.button("Run sweep"):
+    if clients_max < clients_min:
+        st.warning("Clients range was inverted; swapping min/max.")
+    if update_max < update_min:
+        st.warning("Update size range was inverted; swapping min/max.")
+
     clients = _build_clients(clients_min, clients_max, clients_step)
     updates = _build_updates(update_min, update_max, update_steps)
 
@@ -114,11 +119,19 @@ if st.button("Run sweep"):
         base_cfg=base_cfg,
     )
 
-    @st.cache_data(show_spinner=False)
-    def _cached_sweep(cfg: SweepConfig):
-        return run_sweep(cfg)
+    progress = st.progress(0, text="Running sweep...")
 
-    results = _cached_sweep(sweep_cfg)
+    def _progress_cb(done: int, total: int):
+        progress.progress(int((done / total) * 100), text=f"Running sweep... {done}/{total}")
+
+    try:
+        results = run_sweep(sweep_cfg, progress_cb=_progress_cb)
+    except Exception as exc:
+        progress.empty()
+        st.error(f"Sweep failed: {exc}")
+        st.stop()
+
+    progress.empty()
 
     st.subheader("KPI Summary")
     valid_ttt = results["time_to_target"]

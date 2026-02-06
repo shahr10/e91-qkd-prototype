@@ -110,7 +110,7 @@ def simulate(cfg: LiveRunConfig) -> Dict[str, Any]:
     }
 
 
-def run_sweep(cfg: SweepConfig) -> Dict[str, Any]:
+def run_sweep(cfg: SweepConfig, progress_cb=None) -> Dict[str, Any]:
     """Sweep clients_per_round and update_size_bits for a grid of outcomes."""
 
     clients = np.array(cfg.clients_list, dtype=int)
@@ -120,6 +120,8 @@ def run_sweep(cfg: SweepConfig) -> Dict[str, Any]:
     outage_rate = np.zeros((clients.size, updates.size), dtype=float)
     final_accuracy = np.zeros((clients.size, updates.size), dtype=float)
 
+    total = clients.size * updates.size
+    done = 0
     for i, c in enumerate(clients):
         for j, u in enumerate(updates):
             run_cfg = LiveRunConfig(
@@ -142,6 +144,9 @@ def run_sweep(cfg: SweepConfig) -> Dict[str, Any]:
             time_to_target[i, j] = float(ttt) if ttt is not None else np.nan
             outage_rate[i, j] = float(np.mean(res["outages"]))
             final_accuracy[i, j] = float(res["accuracy"][-1])
+            done += 1
+            if progress_cb is not None:
+                progress_cb(done, total)
 
     return {
         "clients": clients,
