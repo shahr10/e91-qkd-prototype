@@ -1530,6 +1530,15 @@ def main():
 
         with col_prev:
             with st.expander("LIVE PREVIEW", expanded=True):
+                # Ensure angle variables exist in Basic mode
+                if st.session_state.ui_mode != "Advanced":
+                    alice_0 = st.session_state.get("alice_0", ALICE_ANGLES_DEFAULT[0])
+                    alice_1 = st.session_state.get("alice_1", ALICE_ANGLES_DEFAULT[1])
+                    alice_2 = st.session_state.get("alice_2", ALICE_ANGLES_DEFAULT[2])
+                    bob_0 = st.session_state.get("bob_0", BOB_ANGLES_DEFAULT[0])
+                    bob_1 = st.session_state.get("bob_1", BOB_ANGLES_DEFAULT[1])
+                    bob_2 = st.session_state.get("bob_2", BOB_ANGLES_DEFAULT[2])
+
                 angle_fig = create_angle_preview([alice_0, alice_1, alice_2], [bob_0, bob_1, bob_2])
                 st.pyplot(angle_fig, width='stretch')
                 # Use config constants for fallback values in preview
