@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import json
+import io
+import matplotlib.pyplot as plt
+import numpy as np
 import streamlit as st
 
 from cislunar_constellation.config import ConstellationConfig
@@ -144,6 +147,43 @@ if st.button("Run Optimization", type="primary"):
 
     st.subheader("Roles")
     st.write(results.roles)
+
+    st.subheader("Coverage Heatmap (Time × Ground Station)")
+    # Build time × GS coverage for selected orbits
+    if results.selected_orbits:
+        sel_idx = [results.orbit_names.index(s) for s in results.selected_orbits if s in results.orbit_names]
+        if sel_idx:
+            coverage = np.max(results.vis_M[sel_idx, :, :], axis=0)  # shape (time, gs)
+
+            fig, ax = plt.subplots(figsize=(8, 3.8))
+            im = ax.imshow(coverage.T, aspect="auto", origin="lower", cmap="viridis")
+            ax.set_xlabel("Time index")
+            ax.set_ylabel("Ground station")
+            ax.set_yticks(range(len(cfg.ground.stations)))
+            ax.set_yticklabels([gs.name for gs in cfg.ground.stations])
+            fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04, label="Visibility (0/1)")
+            st.pyplot(fig, width="stretch")
+
+            buf_png = io.BytesIO()
+            fig.savefig(buf_png, format="png", dpi=200, bbox_inches="tight")
+            buf_png.seek(0)
+
+            buf_pdf = io.BytesIO()
+            fig.savefig(buf_pdf, format="pdf", bbox_inches="tight")
+            buf_pdf.seek(0)
+
+            st.download_button(
+                "Download Heatmap (PNG)",
+                buf_png,
+                file_name="coverage_heatmap.png",
+                mime="image/png",
+            )
+            st.download_button(
+                "Download Heatmap (PDF)",
+                buf_pdf,
+                file_name="coverage_heatmap.pdf",
+                mime="application/pdf",
+            )
 
     export = {
         "config": cfg.__dict__,
